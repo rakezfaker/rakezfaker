@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لعبة المفردات</title>
+    <style>
+        /* تنسيق الخلفية مع رموز العدسة المكبرة */
+        body {
+            background-color: #a7d9a4; /* لون الخلفية الأغمق - يبقى كطبقة أساسية */
+            font-family: 'Tahoma', sans-serif;
+            text-align: center;
+            padding: 0; /* إزالة الهامش الافتراضي للجسم بالكامل */
+            margin: 0; /* إزالة الهامش الافتراضي للجسم بالكامل */
+            
+            /* إضافة رموز العدسة المكبرة كخلفية */
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><text x="25" y="100" font-size="70" font-family="sans-serif" fill="%23d0e0d015">🔍</text></svg>'); /* لون أكثر شفافية */
+            background-repeat: repeat; /* تكرار النمط */
+            background-size: 150px 150px; /* حجم أكبر للنمط لتقليل العدد */
+            background-blend-mode: multiply; /* لجعل اللون الأساسي يظهر من خلال النمط */
+        }
+
+        .notice {
+            background-color: #226845; /* اللون الأخضر الداكن الجديد */
+            color: white; /* تغيير لون النص ليتناسب مع الخلفية الداكنة */
+            padding: 10px 0; /* حشو علوي وسفلي، وإزالة الحشو من الجانبين */
+            font-size: 16px;
+            margin-bottom: 20px;
+            direction: rtl;
+            border-radius: 0; /* إزالة حواف دائرية ليمتد على كامل العرض */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* إضافة ظل بسيط */
+            width: 100%; /* جعله يمتد على كامل عرض الصفحة */
+            box-sizing: border-box; /* لضمان أن العرض 100% يشمل ال padding */
+            margin-left: 0; /* إزالة الهوامش الجانبية */
+            margin-right: 0; /* إزالة الهوامش الجانبية */
+            position: sticky;
+            top: 0;
+            z-index: 100; /* لضمان ظهوره فوق العناصر الأخرى */
+        }
+        
+        /* لتعويض المساحة التي كان يشغلها شريط الملاحظة عند إلصاقه بالأعلى */
+        body > h2 {
+            margin-top: 40px; /* أو أي قيمة مناسبة لتجنب تداخل العنوان مع الشريط */
+        }
+
+        .notice span {
+            color: #ffe082; /* لون مميز لكلمة "ملاحظة" لتبرز على الخلفية الداكنة */
+            font-weight: bold;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(6, 90px); /* 6 أعمدة */
+            grid-gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            width: 90px; /* حجم الدائرة */
+            height: 90px; /* حجم الدائرة */
+            background-color: white;
+            border-radius: 50%;
+            font-size: 20px; /* حجم الخط داخل الدائرة */
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: default;
+            box-shadow: 0 0 4px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* لتكبير حجم الزهرة 🌻 بشكل خاص */
+        .cell.emoji-large {
+            font-size: 40px; /* حجم أكبر للزهرة */
+        }
+
+
+        .buttons {
+            margin: 20px 0;
+            display: flex; /* لجعل الأزرار في صف واحد */
+            justify-content: center; /* لتوسيط الأزرار */
+            gap: 10px; /* مسافة بين الأزرار */
+        }
+
+        button {
+            background-color: #3e5f53;
+            color: white;
+            font-size: 22px; /* زيادة حجم الخط للأزرار السفلية */
+            padding: 14px 28px; /* زيادة حجم الحشو للأزرار السفلية */
+            margin: 5px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #5a806d;
+        }
+
+        .score-boxes {
+            display: flex;
+            justify-content: center;
+            gap: 15px; /* زيادة المسافة بين مربعات النقاط */
+            margin: 20px 0;
+            margin-top: 80px; /* المسافة العلوية لشبكة النقاط */
+        }
+
+        .score-box {
+            width: 80px; /* زيادة عرض مربع النقاط */
+            height: 80px; /* زيادة ارتفاع مربع النقاط */
+            border-radius: 10px;
+            font-size: 30px; /* زيادة حجم الخط داخل مربع النقاط */
+            font-weight: bold;
+            color: white;
+            display: flex;
+            flex-direction: column; /* لتمكين وضع الاسم والنقطة فوق بعض */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease;
+            position: relative; /* لتمكين وضع اسم الفريق بشكل مطلق */
+        }
+
+        .score-box:hover {
+            transform: translateY(-3px);
+        }
+
+        .score-box .team-name-display {
+            position: absolute;
+            top: -45px; /* **التعديل هنا: زيادة المسافة بين الاسم والمربع** */
+            font-size: 0.9em; /* حجم خط أصغر لاسم الفريق */
+            color: black; /* لون أسود لاسم الفريق */
+            font-weight: bold;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* خط جميل */
+            white-space: nowrap; /* لمنع الكسر في حال الاسم طويل */
+        }
+
+
+        .pink { background-color: #c2185b; }
+        .purple { background-color: #6a1b9a; }
+        .blue { background-color: #0277bd; }
+        .yellow { background-color: #f9a825; }
+
+        .timer-container {
+            background: #ffffff;
+            padding: 12px 24px;
+            border-radius: 40px;
+            display: inline-block;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .timer {
+            font-size: 26px;
+            font-weight: bold;
+        }
+
+        #wordListOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 10;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #wordListContent {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 90%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        #wordGrid {
+            display: grid;
+            grid-template-columns: repeat(6, 90px);
+            grid-gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .wordCell {
+            width: 90px;
+            height: 90px;
+            background-color: #f3f3f3;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .wordCell.emoji-large {
+            font-size: 40px;
+        }
+
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+
+        .popup-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+            text-align: right;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.3s ease-out;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .popup-content h3 {
+            text-align: center;
+            color: #3e5f53;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .popup-content ul {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .popup-content li {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            font-size: 18px;
+            color: black;
+        }
+
+        .popup-content li strong {
+            color: #c2185b;
+        }
+
+        .popup-content .closing-remark {
+            font-weight: bold;
+            margin-top: 25px;
+            color: black;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .popup-content button {
+            display: block;
+            margin: 30px auto 0;
+        }
+
+        .popup-content button.start-game-btn,
+        .popup-content button.next-btn {
+            background-color: #3e5f53;
+            font-size: 20px; /* تكبير خط أزرار النوافذ المنبثقة */
+            padding: 12px 24px; /* تكبير حشو أزرار النوافذ المنبثقة */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* --- تنسيقات شاشة تسمية الفرق الجديدة --- */
+        .naming-overlay {
+            display: none; /* مخفي في البداية */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* **التعديل هنا: خلفية خضراء شفافة** */
+            background-color: rgba(62, 95, 83, 0.7); /* لون أخضر داكن شفاف (RGB لأحد ألوان الخلفية) */
+            backdrop-filter: blur(2px); /* لإضافة تأثير ضبابي خفيف للخلفية */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* لضمان ظهوره فوق كل شيء */
+        }
+        .naming-overlay-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            text-align: center;
+            width: 90%;
+            max-width: 450px;
+        }
+        .naming-overlay-content h2 {
+            color: #3e5f53;
+            margin-bottom: 25px;
+            font-size: 2em;
+        }
+        .naming-overlay-content input[type="text"] {
+            display: block;
+            width: calc(100% - 20px); /* 100% عرض مع مراعاة الحشو */
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.1em;
+            text-align: right; /* لجعل النص يبدأ من اليمين */
+            direction: rtl; /* لضمان دعم اللغة العربية */
+        }
+        .naming-overlay-content button {
+            padding: 12px 25px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-top: 15px;
+        }
+        .naming-overlay-content button:hover {
+            background-color: #45a049;
+        }
+        /* --- نهاية تنسيقات شاشة تسمية الفرق الجديدة --- */
+    </style>
+</head>
+<body>
+
+    <div class="notice">
+        <span>ملاحظة:</span> هذه النسخة لشخص واحد فقط وغير قابلة للنشر أو البيع ومن يخالف ذلك سيتم اتخاذ الإجراءات القانونية في هذا الأمر وللتذكير بذمتك وأمانتك:<br>
+        "قال ﷺ: لا إيمان لمن لا أمانة له، ولا دين لمن لا عهد له"
+    </div>
+
+    <h2>لعبة المفردات</h2>
+
+    <div class="timer-container">
+        <div class="timer">المؤقت: <span id="countdown">0</span> ثانية</div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="score-boxes">
+        <div class="score-box pink" onclick="increment(0)" id="score0">
+            <span class="team-name-display" id="teamName0"></span>
+            <span>0</span>
+        </div>
+        <div class="score-box purple" onclick="increment(1)" id="score1">
+            <span class="team-name-display" id="teamName1"></span>
+            <span>0</span>
+        </div>
+        <div class="score-box blue" onclick="increment(2)" id="score2">
+            <span class="team-name-display" id="teamName2"></span>
+            <span>0</span>
+        </div>
+        <div class="score-box yellow" onclick="increment(3)" id="score3">
+            <span class="team-name-display" id="teamName3"></span>
+            <span>0</span>
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button onclick="startGame()">ابدأ</button>
+        <button onclick="showWords()">استعراض</button>
+        <button onclick="resetGame()">إعادة تعيين</button>
+        <button onclick="showNamingOverlay()">تسمية الفرق</button> </div>
+
+    <div id="wordListOverlay">
+        <div id="wordListContent">
+            <h3>الكلمات التي ظهرت:</h3>
+            <div id="wordGrid"></div>
+            <button onclick="closeWords()">عودة</button>
+        </div>
+    </div>
+
+    <div id="advicePopup" class="popup-overlay">
+        <div class="popup-content">
+            <h3>نصيحة علشان نلعب ونستانس… بس بدون ما ننسى الأهم 🌙</h3>
+            <ul>
+                <li>1. ⏰ <strong>"اللعب ممتع، بس خلّه بعد الصلاة، عشان ما تضيع عليك المتعة والأجر."</strong></li>
+                <li>2. 📖 <strong>"اللعب حلوة، بس القرآن أحلى، خذ لك وقت بين الجولات وارتّح مع كلام الله."</strong></li>
+                <li>3. 🙏 <strong>"إذا جاء وقت الصلاة، نوقف اللعب ونكسب رضا رب العالمين."</strong></li>
+                <li>4. ✋ <strong>"نلعب ونضحك، لكن ما نخلي اللعب يلهينا عن طاعة الله."</strong></li>
+                <li>5. 📚 <strong>"اللعب ما يمنع إنك تذاكر، نظّم وقتك وخلّ اللعب مكافأة بعد الإنجاز."</strong></li>
+                <li>6. 🎯 <strong>"اللعبة جزء من يومنا، مو كل يومنا… لا تنسى أهدافك وطموحاتك."</strong></li>
+                <li>7. ⌛ <strong>"وقت المذاكرة غالي، لا تخليه يضيع على حساب لعبة ممكن تلعبها بأي وقت."</strong></li>
+            </ul>
+            <div class="closing-remark">
+                تذكر <strong>"إذا لعبت وانت محافظ على صلاتك واذكارك وقراءة القران وخلصت مهامك و الاشغال الي عليك … أنت كسبت الدنيا والآخرة بأذن الله"</strong>
+            </div>
+            <button onclick="showInstructionsPopup()" class="next-btn">التالي</button>
+        </div>
+    </div>
+
+    <div id="instructionsPopup" class="popup-overlay">
+        <div class="popup-content">
+            <h3>تعليمات اللعبة</h3>
+            <p style="text-align: right; font-size: 18px; margin-bottom: 20px;">
+                <strong>🧠 فكرة اللعبة:</strong><br>
+                لعبة تعتمد على التركيز وسرعة الملاحظة! يمكن ان تلعب كفرق (2-4) أو كلاعبين من (2-4)
+            </p>
+            <p style="text-align: right; font-size: 18px; margin-bottom: 20px;">
+                اللعبة هي عبارة عن الشاشة تفاعلية عند الضغط على زر "ابدأ"، تظهر مجموعة من المفردات داخل شبكة مكوّنة من دوائر. يبدأ عدّاد زمني لمدة 30 ثانية، وخلال هذا الوقت، على كلا من الفرق أو الاعبين محاولة التركيز على أكبر عدد ممكن من ترتيب *3 كلمات* داخل الشبكة.
+                بعد انتهاء الوقت، تختفي الكلمات وتعود الشبكة لرموز الزهور 🌻.
+            </p>
+            <p style="text-align: right; font-size: 18px; margin-bottom: 20px;">
+                <strong>🎮 طريقة اللعب:</strong><br>
+                يُجهّز كل فريق أولاعب بطاقات وأقلام قبل بدء اللعبة.<br><br>
+                عند الضغط على زر ابدأ:
+                <ul>
+                    <li style="font-size: 16px;">تظهر الكلمات داخل الشبكة.</li>
+                    <li style="font-size: 16px;">يبدأ العد التنازلي للوقت (30 ثانية).</li>
+                </ul>
+                خلال العدّاد، يقوم كل فريق أو لاعب بمراقبة الكلمات ومحاولة اكتشاف أكبر عدد من ترتيبات 3 كلمات متتالية داخل الشبكة والترتيب على النحو التالي:
+                <ul style="margin-right: 20px;">
+                    <li style="font-size: 16px;">أفقيًا↔️</li>
+                    <li style="font-size: 16px;">عموديًا ↕️</li>
+                    <li style="font-size: 16px;">قطريًا ⬈⬊</li>
+                </ul>
+                بعد انتهاء الوقت:
+                <ul>
+                    <li style="font-size: 16px;">تختفي الكلمات. ويقوم كل فريق أو لاعب بالتدوين على بطاقته الترتيبات التي اكتشفها.</li>
+                </ul>
+            </p>
+            <p style="text-align: right; font-size: 18px; margin-bottom: 20px;">
+                <strong>🏆 طريقة الفوز:</strong><br>
+                بعد انتهاء الجولة:
+                <ul>
+                    <li style="font-size: 16px;">✅ يقوم كل فريق او لاعب بتقديم البطاقات للقائد ويتم مطابقتها مع النسخة الاصلية للشبكة والتي يمكن استعراضها بالنقر على زر استعراض في الشاشة التفاعلية.</li>
+                    <li style="font-size: 16px;">✅ يتم التحقق من صحة الترتيبات.</li>
+                    <li style="font-size: 16px;">✅ الفريق أو الاعب الذي ينجح في اكتشاف أكبر عدد ممكن من الترتيبات الصحيحة (3 كلمات متتالية) هو الفريق الفائز 🎉</li>
+                </ul>
+            </p>
+            <button onclick="closePopups()" class="start-game-btn">بدء اللعب</button>
+        </div>
+    </div>
+
+    <div id="namingOverlay" class="naming-overlay">
+        <div class="naming-overlay-content">
+            <h2>تسمية الفرق</h2>
+            <input type="text" id="inputTeam0" placeholder="اسم الفريق الأول">
+            <input type="text" id="inputTeam1" placeholder="اسم الفريق الثاني">
+            <input type="text" id="inputTeam2" placeholder="اسم الفريق الثالث">
+            <input type="text" id="inputTeam3" placeholder="اسم الفريق الرابع">
+            <button id="saveTeamNamesBtn">حفظ الأسماء</button>
+        </div>
+    </div>
+
+    <script>
+        const grid = document.getElementById("grid");
+        const countdownEl = document.getElementById("countdown");
+        const wordGrid = document.getElementById("wordGrid");
+        const wordListOverlay = document.getElementById("wordListOverlay");
+        const advicePopup = document.getElementById("advicePopup");
+        const instructionsPopup = document.getElementById("instructionsPopup");
+        const namingOverlay = document.getElementById('namingOverlay'); // شاشة تسمية الفرق
+        const saveTeamNamesBtn = document.getElementById('saveTeamNamesBtn'); // زر حفظ الأسماء
+
+        const gridEmojis = "🌻"; // وردة الشبكة الأصلية (تم الاحتفاظ بها كما هي)
+        const backgroundEmojis = "🔍"; // الرمز الجديد لخلفية الصفحة (تم الاحتفاظ بها)
+        
+        const categories = [
+            "تفاح", "موز", "برتقال", "نمر", "أسد", "نحلة", "فراشة",
+            "مطرقة", "منشار", "الرياض", "جدة", "دمشق", "بيروت",
+            "أحمر", "أزرق", "أخضر", "أصفر", "أسود", "أبيض", "وردي", "رمادي",
+            "بحر العرب", "الخليج", "ماء", "ثلج", "قلم", "كتاب", "غزال", "قرش",
+            "حوت", "تمساح", "علبة", "ساعة", "سرير", "صحن", "هاتف"
+        ];
+
+        let currentWords = [];
+        let timer;
+        let timeLeft = 0;
+        const TOTAL_CELLS = 24; // 6 أعمدة * 4 صفوف
+
+        // دالة لعرض أول نافذة منبثقة عند تحميل الصفحة
+        window.onload = function() {
+            advicePopup.style.display = 'flex';
+            fillGridWithEmoji(); // نملأ الشبكة بالزهور عند البداية
+            // التأكد من أن أسماء الفرق فارغة في البداية
+            for (let i = 0; i < 4; i++) {
+                const teamNameSpan = document.getElementById(`teamName${i}`);
+                if (teamNameSpan) {
+                    teamNameSpan.textContent = ''; // إفراغ الاسم عند التحميل
+                }
+            }
+        };
+
+        function showInstructionsPopup() {
+            advicePopup.style.display = 'none'; // إخفاء نافذة النصيحة
+            instructionsPopup.style.display = 'flex'; // إظهار نافذة التعليمات
+        }
+
+        function closePopups() {
+            advicePopup.style.display = 'none';
+            instructionsPopup.style.display = 'none';
+        }
+
+        function fillGridWithEmoji() {
+            grid.innerHTML = "";
+            for (let i = 0; i < TOTAL_CELLS; i++) {
+                const cell = document.createElement("div");
+                cell.className = "cell emoji-large"; // إضافة كلاس لتكبير الزهرة
+                cell.textContent = gridEmojis; // استخدام وردة الشبكة الأصلية
+                grid.appendChild(cell);
+            }
+        }
+
+        function startGame() {
+            clearInterval(timer); // إيقاف أي مؤقت سابق
+            wordGrid.innerHTML = "";
+            wordListOverlay.style.display = 'none'; // إخفاء نافذة استعراض الكلمات إذا كانت مفتوحة
+
+            // نختار 24 كلمة فقط للشبكة (6*4)
+            currentWords = shuffle(categories).slice(0, TOTAL_CELLS);
+            grid.childNodes.forEach((cell, i) => {
+                cell.textContent = currentWords[i];
+                cell.classList.remove('emoji-large'); // إزالة كلاس الزهرة عند ظهور الكلمات
+            });
+
+            timeLeft = 30; // مدة اللعبة بالثواني
+            countdownEl.textContent = timeLeft;
+            timer = setInterval(() => {
+                timeLeft--;
+                countdownEl.textContent = timeLeft;
+                if (timeLeft === 0) {
+                    clearInterval(timer);
+                    resetGrid(); // إعادة تعيين الشبكة للزهور عند انتهاء الوقت
+                }
+            }, 1000);
+        }
+
+        function resetGrid() {
+            grid.childNodes.forEach(cell => {
+                cell.textContent = gridEmojis; // استخدام وردة الشبكة الأصلية
+                cell.classList.add('emoji-large'); // إضافة كلاس الزهرة عند إعادة التعيين
+            });
+        }
+
+        function increment(index) {
+            const el = document.getElementById("score" + index).querySelector('span:last-child'); // للحصول على عنصر النتيجة فقط
+            el.textContent = parseInt(el.textContent) + 1;
+        }
+
+        function showWords() {
+            wordListOverlay.style.display = 'flex';
+            wordGrid.innerHTML = "";
+            // عرض الكلمات الحالية، أو زهور إذا لم تبدأ اللعبة بعد
+            const wordsToDisplay = currentWords.length > 0 ? currentWords : Array(TOTAL_CELLS).fill(gridEmojis); // استخدام وردة الشبكة الأصلية
+            for (let i = 0; i < TOTAL_CELLS; i++) {
+                const cell = document.createElement("div");
+                cell.className = "wordCell";
+                if (wordsToDisplay[i] === gridEmojis) { // إذا كانت زهرة كبرها في الاستعراض
+                    cell.classList.add('emoji-large');
+                }
+                cell.textContent = wordsToDisplay[i];
+                wordGrid.appendChild(cell);
+            }
+        }
+
+        function closeWords() {
+            wordListOverlay.style.display = 'none';
+        }
+
+        function resetGame() {
+            clearInterval(timer);
+            fillGridWithEmoji(); // إعادة الشبكة إلى الزهور
+            countdownEl.textContent = 0; // تصفير المؤقت
+            for (let i = 0; i < 4; i++) { // تصفير النقاط وإزالة أسماء الفرق
+                document.getElementById("score" + i).querySelector('span:last-child').textContent = 0; // تصفير النتيجة فقط
+                document.getElementById(`teamName${i}`).textContent = ''; // إزالة أسماء الفرق عند إعادة التعيين
+            }
+            currentWords = []; // تصفير الكلمات الحالية
+            wordListOverlay.style.display = 'none'; // إغلاق نافذة الاستعراض
+            namingOverlay.style.display = 'none'; // إخفاء شاشة تسمية الفرق
+        }
+
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            // بينما لا يوجد عناصر غير مخلطة
+            while (currentIndex != 0) {
+                // اختر عنصراً متبقياً
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                // بدّله مع العنصر الحالي
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // --- وظائف تسمية الفرق الجديدة ---
+        function showNamingOverlay() {
+            namingOverlay.style.display = 'flex'; // عرض الشاشة الشفافة
+            // تعبئة حقول الإدخال بأسماء الفرق الحالية (إن وجدت)
+            for (let i = 0; i < 4; i++) {
+                const teamNameSpan = document.getElementById(`teamName${i}`);
+                const inputField = document.getElementById(`inputTeam${i}`);
+                if (teamNameSpan && inputField) {
+                    inputField.value = teamNameSpan.textContent.trim(); // تعبئة الحقل بالاسم الحالي
+                }
+            }
+        }
+
+        saveTeamNamesBtn.addEventListener('click', () => {
+            for (let i = 0; i < 4; i++) {
+                const inputField = document.getElementById(`inputTeam${i}`);
+                const teamNameSpan = document.getElementById(`teamName${i}`);
+                if (inputField && teamNameSpan) {
+                    const newName = inputField.value.trim();
+                    teamNameSpan.textContent = newName; // تعيين الاسم كما تم إدخاله (سيبقى فارغًا إذا كان الحقل فارغًا)
+                }
+            }
+            namingOverlay.style.display = 'none'; // إخفاء الشاشة بعد الحفظ
+        });
+
+        // إخفاء الشاشة بالنقر خارج المحتوى
+        namingOverlay.addEventListener('click', (e) => {
+            if (e.target === namingOverlay) {
+                namingOverlay.style.display = 'none';
+            }
+        });
+        // --- نهاية وظائف تسمية الفرق الجديدة ---
+
+    </script>
+</body>
+</html>
