@@ -338,6 +338,61 @@
             background-color: #45a049;
         }
         /* --- نهاية تنسيقات شاشة تسمية الفرق الجديدة --- */
+
+        /* --- تنسيقات شاشة النتائج الجديدة --- */
+        #resultsPopup .popup-content {
+            text-align: center;
+            max-width: 500px; /* يمكن تكبيرها لتناسب عرض النتائج */
+        }
+        #resultsPopup h3 {
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+        #resultsPopup .winner-info {
+            font-size: 24px;
+            font-weight: bold;
+            color: #226845;
+            margin-bottom: 20px;
+        }
+        #resultsPopup .trophy-emoji {
+            font-size: 80px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            animation: bounceIn 0.8s ease-out;
+        }
+        #resultsPopup .team-scores {
+            display: flex;
+            flex-wrap: wrap; /* للسماح للفرق بالنزول لسطر جديد إذا كانت كثيرة */
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        #resultsPopup .score-item {
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-size: 18px;
+            color: #333;
+            text-align: right;
+            direction: rtl;
+            min-width: 150px; /* لضمان عرض كافٍ */
+        }
+        #resultsPopup .score-item span {
+            font-weight: bold;
+            color: #c2185b;
+        }
+        #resultsPopup .difference-item {
+            font-size: 16px;
+            color: #555;
+            text-align: right;
+            direction: rtl;
+            margin-top: 8px;
+        }
+        #resultsPopup .difference-item span {
+            font-weight: bold;
+            color: #0277bd;
+        }
+        /* نهاية تنسيقات شاشة النتائج */
     </style>
 </head>
 <body>
@@ -346,11 +401,11 @@
         <span>ملاحظة:</span> هذه النسخة لشخص واحد فقط  وتابعة لمتجر همزة كاف لذلك هي غير قابلة للنشر أو البيع ومن يخالف ذلك سيتم اتخاذ الإجراءات القانونية في هذا الأمر وللتذكير بذمتك وأمانتك:<br>
         "قال ﷺ: لا إيمان لمن لا أمانة له، ولا دين لمن لا عهد له"
     </div>
-  <h2>   
+ <h2>   
 <div id="game-logo-bar">
 <img src="https://raw.githubusercontent.com/rakezfaker/rakezfaker/main/rakasfakar-removebg-preview.png"alt="شعار اللعبة">
 </div>
-   </h2>
+    </h2>
 
     <div class="timer-container">
         <div class="timer">المؤقت: <span id="countdown">0</span> ثانية</div>
@@ -381,7 +436,8 @@
         <button onclick="startGame()">ابدأ</button>
         <button onclick="showWords()">استعراض</button>
         <button onclick="resetGame()">إعادة تعيين</button>
-        <button onclick="showNamingOverlay()">تسمية الفرق</button> </div>
+        <button onclick="showNamingOverlay()">تسمية الفرق</button>
+        <button onclick="endGame()">إنهاء اللعب</button> </div>
 
     <div id="wordListOverlay">
         <div id="wordListContent">
@@ -447,8 +503,8 @@
                     <li style="font-size: 16px;">✅ يقوم كل فريق او لاعب بتقديم البطاقات للقائد ويتم مطابقتها مع النسخة الاصلية للشبكة والتي يمكن استعراضها بالنقر على زر استعراض في الشاشة التفاعلية.</li>
                     <li style="font-size: 16px;">✅ يتم التحقق من صحة الترتيبات.</li>
                     <li style="font-size: 16px;">✅ الفريق أو الاعب الذي ينجح في اكتشاف أكبر عدد ممكن من الترتيبات الصحيحة (3 كلمات متتالية) هو الفريق الذي يضع له نقطة 🎉</li>
-                 <li style="font-size: 16px;">✅تستمر الجولات بنفس النمط ويتم تحديد نهاية اللعب من قبل الاعبين وعند الرغبه في الانهاء يكون الفريق الذي حصل على اكبر عدد من النقاط هو الفريق الفائز</li>
-                
+                    <li style="font-size: 16px;">✅تستمر الجولات بنفس النمط ويتم تحديد نهاية اللعب من قبل الاعبين وعند الرغبه في الانهاء ينقر على زر انهاء اللعب و يكون الفريق الذي حصل على اكبر عدد من النقاط هو الفريق الفائز</li>
+                    
                 </ul>
             </p>
             <button onclick="closePopups()" class="start-game-btn">بدء اللعب</button>
@@ -466,6 +522,16 @@
         </div>
     </div>
 
+    <div id="resultsPopup" class="popup-overlay">
+        <div class="popup-content">
+            <h3>نتائج اللعب النهائية! 🏁</h3>
+            <div class="trophy-emoji">🏆</div>
+            <div class="winner-info" id="winnerInfo"></div>
+            <div class="team-scores" id="finalScores"></div>
+            <button onclick="closeResultsPopup()">إغلاق</button>
+        </div>
+    </div>
+
     <script>
         const grid = document.getElementById("grid");
         const countdownEl = document.getElementById("countdown");
@@ -475,6 +541,9 @@
         const instructionsPopup = document.getElementById("instructionsPopup");
         const namingOverlay = document.getElementById('namingOverlay'); // شاشة تسمية الفرق
         const saveTeamNamesBtn = document.getElementById('saveTeamNamesBtn'); // زر حفظ الأسماء
+        const resultsPopup = document.getElementById('resultsPopup'); // شاشة النتائج
+        const winnerInfo = document.getElementById('winnerInfo');
+        const finalScores = document.getElementById('finalScores');
 
         const gridEmojis = "🌻"; // وردة الشبكة الأصلية (تم الاحتفاظ بها كما هي)
         const backgroundEmojis = "🔍"; // الرمز الجديد لخلفية الصفحة (تم الاحتفاظ بها)
@@ -529,6 +598,7 @@
             clearInterval(timer); // إيقاف أي مؤقت سابق
             wordGrid.innerHTML = "";
             wordListOverlay.style.display = 'none'; // إخفاء نافذة استعراض الكلمات إذا كانت مفتوحة
+            resultsPopup.style.display = 'none'; // إخفاء شاشة النتائج إذا كانت مفتوحة
 
             // نختار 24 كلمة فقط للشبكة (6*4)
             currentWords = shuffle(categories).slice(0, TOTAL_CELLS);
@@ -592,6 +662,7 @@
             currentWords = []; // تصفير الكلمات الحالية
             wordListOverlay.style.display = 'none'; // إغلاق نافذة الاستعراض
             namingOverlay.style.display = 'none'; // إخفاء شاشة تسمية الفرق
+            resultsPopup.style.display = 'none'; // إخفاء شاشة النتائج
         }
 
         function shuffle(array) {
@@ -640,18 +711,100 @@
         });
         // --- نهاية وظائف تسمية الفرق الجديدة ---
 
+        // --- وظائف إنهاء اللعب وعرض النتائج ---
+        function endGame() {
+            clearInterval(timer); // إيقاف المؤقت إذا كان يعمل
+            countdownEl.textContent = 0; // تصفير المؤقت
+
+            let teams = [];
+            let maxScore = -1;
+            let winningTeams = [];
+
+            // جمع أسماء ونقاط الفرق
+            for (let i = 0; i < 4; i++) {
+                const teamName = document.getElementById(`teamName${i}`).textContent || `الفريق ${i + 1}`;
+                const score = parseInt(document.getElementById(`score${i}`).querySelector('span:last-child').textContent);
+                teams.push({ name: teamName, score: score });
+
+                if (score > maxScore) {
+                    maxScore = score;
+                    winningTeams = [{ name: teamName, score: score }];
+                } else if (score === maxScore && score > 0) { // أضف الفريق إذا تعادل في النقاط ولم تكن النقاط صفر
+                    winningTeams.push({ name: teamName, score: score });
+                }
+            }
+
+            // تصفية الفرق التي لا توجد لها أسماء أو نقاطها صفر ما لم تكن هي الفائزة الوحيدة بنقاط صفر
+            let activeTeams = teams.filter(team => team.name.trim() !== '' || team.score > 0);
+
+            // إذا لم يكن هناك فائز بنقاط إيجابية، ولكن هناك فرق نشطة (لها اسم على الأقل)، نبحث عن الفريق الذي له اسم ولديه أكبر عدد من النقاط (حتى لو كانت صفر)
+            if (winningTeams.length === 0 && activeTeams.length > 0) {
+                activeTeams.sort((a, b) => b.score - a.score); // رتب تنازليًا
+                maxScore = activeTeams[0].score;
+                winningTeams = activeTeams.filter(team => team.score === maxScore);
+            }
+            
+            // تهيئة رسالة الفائز
+            let winnerMessage = "";
+            if (winningTeams.length > 1) {
+                winnerMessage = `تعادل الفائزون: ${winningTeams.map(t => t.name).join(' و ')} بنتيجة ${maxScore} نقطة!`;
+            } else if (winningTeams.length === 1 && winningTeams[0].score > 0) {
+                winnerMessage = `الفريق الفائز هو: ${winningTeams[0].name} بـ ${winningTeams[0].score} نقطة!`;
+            } else {
+                winnerMessage = "لا يوجد فائز في هذه الجولة. ابدأ لعبة جديدة أو زد النقاط!";
+            }
+
+            winnerInfo.textContent = winnerMessage;
+            finalScores.innerHTML = ""; // مسح النتائج السابقة
+
+            // عرض نقاط جميع الفرق النشطة
+            activeTeams.forEach(team => {
+                const scoreItem = document.createElement('div');
+                scoreItem.className = 'score-item';
+                scoreItem.innerHTML = `
+                    <div>${team.name}: <span>${team.score}</span> نقطة</div>
+                `;
+                finalScores.appendChild(scoreItem);
+            });
+
+            // حساب وعرض فرق النقاط
+            if (winningTeams.length === 1 && winningTeams[0].score > 0) {
+                const winnerScore = winningTeams[0].score;
+                teams.forEach(team => {
+                    if (team.name !== winningTeams[0].name && team.name.trim() !== '') {
+                        const difference = winnerScore - team.score;
+                        const differenceItem = document.createElement('div');
+                        differenceItem.className = 'difference-item';
+                        differenceItem.innerHTML = `
+                            الفرق بين ${winningTeams[0].name} و ${team.name} هو: <span>${difference}</span> نقطة.
+                        `;
+                        finalScores.appendChild(differenceItem);
+                    }
+                });
+            } else if (winningTeams.length > 1 && winningTeams[0].score > 0) {
+                const highestScore = winningTeams[0].score; // جميع الفرق الفائزة لديها نفس النتيجة
+                teams.forEach(team => {
+                    if (!winningTeams.some(wt => wt.name === team.name) && team.name.trim() !== '') {
+                        const difference = highestScore - team.score;
+                        const differenceItem = document.createElement('div');
+                        differenceItem.className = 'difference-item';
+                        differenceItem.innerHTML = `
+                            الفرق بين المتصدرين و ${team.name} هو: <span>${difference}</span> نقطة.
+                        `;
+                        finalScores.appendChild(differenceItem);
+                    }
+                });
+            }
+
+
+            resultsPopup.style.display = 'flex'; // عرض شاشة النتائج
+        }
+
+        function closeResultsPopup() {
+            resultsPopup.style.display = 'none';
+        }
+        // --- نهاية وظائف إنهاء اللعب وعرض النتائج ---
+
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
